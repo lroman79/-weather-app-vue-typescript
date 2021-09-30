@@ -12,11 +12,13 @@
 <script>
 import TheHeader from './components/nav/TheHeader.vue';
 
-export default {
+import { defineComponent } from 'vue'
+
+export default defineComponent({
    components: {
     TheHeader
   },
-};
+});
 </script>
 
 <style>

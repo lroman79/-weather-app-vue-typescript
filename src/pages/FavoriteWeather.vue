@@ -2,7 +2,6 @@
   <div class="fvorites-container">
     <section>
         <h3 class="favorite-title">Favorite Weather</h3>
-             {{}}
         <div class="favorite-item-wrp" v-if="hasFavoriteLocations">  
             <favorite-city
                 v-for="favoriteItem in favoriteItems"
@@ -20,60 +19,68 @@
    </div>
 </template>
 
-<script>
- import FavoriteCity from '../components/weather/FavoriteCity.vue';
+<script lang="ts">
+import FavoriteCity from '../components/weather/FavoriteCity.vue';
 
-export default {
+import { defineComponent } from 'vue'; 
+
+export default defineComponent({
     components: {
-        FavoriteCity
+     FavoriteCity
     },
     data() {
         return {
-            storedLocationsArr: [],
-            weatherArr: [],
+            storedLocationsArr: [] as any[],
+            weatherArr: [] as object[],
             favoritesStorageName: 'storedFavoriteCities',
             APIkey: 'KWM5jZQwAi8lfyrJkK9BfGOSNTAxlXfC',
             //APIkey: '1BAKSQ0qyJYiMpAP4liSrutHJRd5a9zE',
         }
     },
     methods: {
-        loadWeather(locationApi) {             
+        loadWeather(locationApi: string): Promise<Object> {             
             return this.$store.dispatch('favorites/loadWeather', { api: locationApi, keyApi: this.APIkey });                                  
         },
-        setWeatherArr() { 
-            const locationsArr = this.getFavoriteCities;
-         
-            if (locationsArr.length > 0 && locationsArr[0]) {
-                locationsArr.forEach(item => {    
-                
-                    const locationObj = {};               
-                    locationObj.cityName = item.locationName;
-                    locationObj.id = item.id;
+        setWeatherArr(): void { 
 
-                    this.loadWeather(item.id)
-                        .then(res => {
-                            if (res) {
-                            const weatherObj = this.getWeather;
-                            const finalWeatherObj = { ...locationObj, ...weatherObj };
-                            this.weatherArr.push(finalWeatherObj);
-                            }
-                        }) 
-                        .catch( err => { console.log(err) });                            
-                }); 
-            }                     
+            const locationsArr: Array<{
+                    location: string,
+                    locationName: string, 
+                    id: string
+            }> = this.getFavoriteCities;
+
+            locationsArr.forEach( async (item) => {    
+                if(Object.keys(item).length !== 0) {
+
+                    const locationObj = {               
+                        cityName : item.locationName,
+                        id : item.id
+                    }
+                    try {
+                        await this.loadWeather(item.id);
+                        const weatherObj: object = this.getWeather;
+                        const finalWeatherObj: object = { ...weatherObj, ...locationObj };
+                        this.weatherArr.push(finalWeatherObj);
+                    } catch(err) { 
+                        console.log(err);                            
+                    }  
+                }
+            });                      
         },
-        getLocationsFromLocalStorage() {   
+        getLocationsFromLocalStorage(): Promise<void> {  
          return new Promise((resolve, reject) => {
             if (localStorage.getItem(this.favoritesStorageName) !== null) {
 
-              const storedFavoritesArr = JSON.parse(localStorage.getItem(this.favoritesStorageName));
+              const storedFavoritesArr: [] = JSON.parse(localStorage.getItem(this.favoritesStorageName) || '{}');
 
               if (storedFavoritesArr && storedFavoritesArr.length > 0) {
                 this.storedLocationsArr = storedFavoritesArr;
                 resolve();                                      
-              }   
-            } else {
+              } else {
                 reject(new Error('No favorites found!'));
+              }
+            } else {
+              reject(new Error('No favorites found!'));
             }
          });               
         },
@@ -84,30 +91,27 @@ export default {
          } catch(err) {
             console.log(err);
          }
-        }
+        },
     },
     computed: {
-        favoriteItems() {
+        favoriteItems(): object[] {
             return this.weatherArr;
         },
-        locationInfo () {
-          return this.$store.getters['favorites/getLocationInfo'];
-        },
-        getWeather() { 
-            const weather = this.$store.getters['favorites/getWeather'];
+        getWeather(): object { 
+            const weather: object = this.$store.getters['favorites/getWeather'];
             return weather;
         },
-        getFavoriteCities() {
+        getFavoriteCities(): any {
             return this.storedLocationsArr;
         },
-        hasFavoriteLocations() {
+        hasFavoriteLocations(): boolean {
             return this.weatherArr && this.weatherArr.length > 0;
         }
     },
     created() {
      this.initFavoriteWeather();
     }
-}
+})
 </script>
 
 <style scoped>

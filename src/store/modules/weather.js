@@ -74,7 +74,6 @@ export default {
           const res = await axios.get(weatherUrlWithParams);         
           const [responseDataWeather] = res.data;
           context.commit('setWeather', responseDataWeather);
-          console.log(res);
         } catch(err) {
           const error = new Error(err.message || 'Failed to fetch weather!');
           console.log(err);

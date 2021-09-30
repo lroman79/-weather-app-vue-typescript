@@ -10,7 +10,7 @@
 
 <script>
 export default {
-   props: ['date', 'amount', 'unit', 'cityname', 'weathertext', 'id'],
+   props: ['amount', 'unit', 'cityname', 'weathertext', 'id'],
    data() {
       return {
          itemId: this.id

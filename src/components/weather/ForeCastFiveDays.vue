@@ -9,12 +9,27 @@
    </div>
 </template>
 
-<script>
-export default {
-    props: ['date', 'amount', 'unit'],
+<script lang="ts">
+import { defineComponent, PropType } from 'vue'; // CHANGE
+
+export default defineComponent({
+    props: {
+        date: {
+         type: String as PropType<string | number | Date>,
+         required: true
+        },
+        amount: {
+         type: Number as PropType<Number>,
+         required: true
+        },
+        unit: {
+         type: String as PropType<String>,
+         required: true
+        }
+    },     
     computed: {
-     weekDayName() {
-         let date = new Date(this.date);
+     weekDayName(): string {
+         let date: string | number | Date = new Date(this.date);
          const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
          const dayNumber = date.getDay();
          const dayName = weekDays[dayNumber];
@@ -28,7 +43,7 @@ export default {
          return unit;
      }
     }
-}
+})
 </script>
 
 <style scoped>

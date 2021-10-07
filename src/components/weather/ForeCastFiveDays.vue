@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from 'vue'; // CHANGE
+import { defineComponent, PropType } from 'vue';
 
 export default defineComponent({
     props: {
@@ -29,18 +29,14 @@ export default defineComponent({
     },     
     computed: {
      weekDayName(): string {
-         let date: string | number | Date = new Date(this.date);
-         const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-         const dayNumber = date.getDay();
-         const dayName = weekDays[dayNumber];
-         return dayName;
+        let date: string | number | Date = new Date(this.date);
+        const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const dayNumber = date.getDay();
+        const dayName = weekDays[dayNumber];
+        return dayName;
      },
-     unitSymbol() {
-         let unit = '℃';
-         if (this.unit === 'F') {
-          unit = '℉';
-         }
-         return unit;
+     unitSymbol(): string {
+        return (this.unit === 'F') ? '℉' : '℃';
      }
     }
 })

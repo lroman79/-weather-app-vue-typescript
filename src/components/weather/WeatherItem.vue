@@ -9,35 +9,41 @@
           <div class="current-city">{{ cityname }}</div>
           <div class="today-temperature">
             <span class="tmpr-amount">{{ amount }}</span>
-            <span class="tmpr-unit">{{ unitSymbol }}</span>
+            <span class="tmpr-unit">{{ unit }}</span>
           </div>
         </div>
       </div>
-      <!-- <div>
-        <button @click="toggleUnits">Change Units</button>
-      </div> -->
     </div>
     <h2 class="weather-text">{{ weathertext }}</h2>
 </template>
 
-<script>
-  export default {
-    props: ['amount', 'unit', 'cityname', 'icon', 'weathertext'],
-    methods: {
-      // toggleUnits() {
-      //   this.$emit('toggle-units');
-      // }
+<script lang="ts">
+  import { defineComponent, PropType } from 'vue';
+
+  export default defineComponent({
+    props: {
+      amount: {
+        type: Number as PropType<Number>,
+        required: true
+      },
+      unit: {
+        type: String as PropType<String>,
+        required: true
+      },
+      cityname: {
+        type: String as PropType<String>,
+        required: true
+      },
+      icon: {
+        type: String as PropType<String>,
+        required: true
+      },
+      weathertext: {
+        type: String as PropType<String>,
+        required: true
+      }
     },
-    computed: {
-      unitSymbol() {
-        let unit = '℃';
-        if (this.unit === 'F') {
-         unit = '℉';
-        }
-        return unit;
-     }
-    }
-  }
+  })
 </script>
 
 <style scoped>

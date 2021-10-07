@@ -4,20 +4,12 @@ export default {
     namespaced: true,
     state() {
       return {      
-        locationInfo: {},
-        error: '',
         weatherData: {},
       };
     },
     mutations: {
-     setLocationInfo(state, payload) {
-      state.locationInfo = payload;
-     },
      setWeather(state, payload) {
       state.weatherData = payload;
-     },
-     error(state, data) {
-      return state.error = data;
      },
     },
     actions: {
@@ -41,12 +33,6 @@ export default {
       }
     },
     getters: {
-     getLocationInfo(state) {
-      return state.locationInfo;
-     },
-     hasLocationInfo(state) {
-      return state.locationInfo;
-     },
      getWeather(state) {
       return state.weatherData;
      },

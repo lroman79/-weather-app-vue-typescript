@@ -6,9 +6,8 @@ export default {
       return {      
         locationInfo: {},
         defaultLocationInfo: {},
-        error: '',
         weatherData: {},
-        forecastFiveDaysData: {},
+        forecastFiveDaysData: [],
       };
     },
     mutations: {
@@ -23,9 +22,6 @@ export default {
      },
      setForeCast(state, payload) {
         state.forecastFiveDaysData = payload;
-     },
-     error(state, data) {
-      return state.error = data;
      },
     },
     actions: {
@@ -84,12 +80,11 @@ export default {
        const locationApi = data.api;
        const baseUrl = 'https://dataservice.accuweather.com/';
        const foreCastUrl = 'forecasts/v1/daily/5day/';                        
-       const locationInfoUrlWithParams = `${baseUrl}${foreCastUrl}${locationApi}?apikey=${data.keyApi}&metric=true`;
+       const locationInfoUrlWithParams = `${baseUrl}${foreCastUrl}${locationApi}?apikey=${data.keyApi}&metric=true&details=true`;
 
         try {
           const responseLocationInfo = await fetch(locationInfoUrlWithParams);
           const responseDataLocationInfo = await responseLocationInfo.json();
-          
           const locationInfoResponse = responseDataLocationInfo.DailyForecasts;
           
           context.commit('setForeCast', locationInfoResponse);
@@ -110,14 +105,14 @@ export default {
      getWeather(state) {
       return state.weatherData;
      },
-     hasWeather(state) {
-      return state.weatherData && Object.keys(state.weatherData).length !== 0;
-     },
      getForeCast(state) {
-      return state.forecastFiveDaysData;
-     },
+       return state.forecastFiveDaysData;
+      },
+     hasWeather(state) {
+       return Object.keys(state.weatherData).length > 0;
+      },
      hasForeCast(state) {
-      return state.forecastFiveDaysData && state.forecastFiveDaysData.length > 0;
+      return state.forecastFiveDaysData.length > 0;
      },
     }
 };

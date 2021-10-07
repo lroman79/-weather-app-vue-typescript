@@ -1,5 +1,5 @@
 <template>
-    <div :id="itemId" class="favorite-city" @click="goToDitails">
+    <div :id="id" class="favorite-city" @click="goToDitails">
        <div class="fav-city-name">{{ cityname }}</div>
        
        <div class="fav-city-desc">{{ weathertext }}</div>
@@ -8,29 +8,47 @@
     </div>
 </template>
 
-<script>
-export default {
-   props: ['amount', 'unit', 'cityname', 'weathertext', 'id'],
-   data() {
-      return {
-         itemId: this.id
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
+
+export default defineComponent({
+   props: {
+      amount: {
+         type: Number as PropType<Number>,
+         required: true
+      },
+      unit: {
+         type: String as PropType<String>,
+         required: true
+      },
+      cityname: {
+         type: String as PropType<String>,
+         required: true
+      },
+      weathertext: {
+         type: String as PropType<String>,
+         required: true
+      },
+      id: {
+         type: String as PropType<String>,
+         required: true
       }
    },
    methods: {
-      goToDitails() {
-        this.$router.push({ path:'/', query: { locationId: this.id, locationName: this.cityname } });
+      goToDitails(): void {
+        this.$router.push({ path:'/', query: { 
+           locationId: (this.id).toString(), 
+           locationName: (this.cityname).toString() 
+         } 
+        });
       }
    },
    computed: {
-      unitSymbol() {
-        let unit = '℃';
-        if (this.unit === 'F') {
-         unit = '℉';
-        }
-        return unit;
+      unitSymbol(): string {
+        return (this.unit === 'F') ? '℉' : '℃';
       }
     }
-}
+})
 </script>
 
 <style scoped>

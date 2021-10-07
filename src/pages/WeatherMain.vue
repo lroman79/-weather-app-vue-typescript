@@ -8,6 +8,7 @@
                  <button class="search-btn" @click="fetchWeather">Search</button>
                 </div>
                  <button class="current-location-btn" @click="fetchCurrentLocationWeather">Get Current Location</button>
+                 <button class="current-location-btn" @click="toggleTemperatureFormant">Change Temperature Format</button>
                 <div v-if="errorMessage" class="input-errors"> {{ errorMessage }}</div>
                 
             </section>
@@ -22,7 +23,7 @@
         </div>
          
         <hr>
-  
+
         <section class="main-weather-info">
             <div v-if="isLoading">
                 <base-spinner></base-spinner>
@@ -30,9 +31,9 @@
              <weather-item v-else-if="hasWeather" 
                 :icon="getWeather.icon" 
                 :cityname="getWeather.cityName"
-                :weathertext="getWeather.WeatherText" 
-                :amount="getWeather.Temperature.Metric.Value"
-                :unit="getWeather.Temperature.Metric.Unit"></weather-item>
+                :weathertext="getWeather.weatherText" 
+                :amount="getWeather.amount"
+                :unit="getWeather.unit"></weather-item>
         </section>
 
         <div class="forecast-5-days" v-if="hasForeCast">
@@ -59,6 +60,7 @@
         },
         data() {
             return {
+                testArr: [] as any[],
                 isLoading: true,
                 isInFavorites: false,
                 defaultLocationAPI: '215854',
@@ -66,10 +68,10 @@
                 defaultLocationCity: 'Tel Aviv',
                 defaultGeoPosition: '',
                 cityName: '',
-                TemperatureUnit: 'Metric',
+                TemperatureFormat: 'Metric',
                 cityQuery: '',
-                APIkey: 'KWM5jZQwAi8lfyrJkK9BfGOSNTAxlXfC',
-                //APIkey: '1BAKSQ0qyJYiMpAP4liSrutHJRd5a9zE',
+                //APIkey: 'KWM5jZQwAi8lfyrJkK9BfGOSNTAxlXfC',
+                APIkey: '1BAKSQ0qyJYiMpAP4liSrutHJRd5a9zE',
                 locationsStorageName: 'storedLocations',
                 favoritesStorageName: 'storedFavoriteCities',
                 errorMessage: '',
@@ -97,31 +99,44 @@
             }
         },
         methods: {
-            checkIfInFavorites(): boolean {
-                if (localStorage.getItem(this.favoritesStorageName) !== null) {
-                    let result = false;
-                    const locationName = this.cityName;
-                    const storedFavorites: [] = JSON.parse(localStorage.getItem(this.favoritesStorageName) || '{}');
-                     
-                    if (storedFavorites && storedFavorites.length > 0) {
-                     result = storedFavorites.some((el: { 
-                        location: string, 
-                        locationName: string, 
-                        id: string
-                     }) => el.locationName === locationName);
-                    } 
-                    return result;
-                } else {
+            // isValidJson(item: string): boolean {
+            //     try {
+            //         item = JSON.parse(item);
+            //     } catch (e) {
+            //         console.log(e);
+            //         return false;
+            //     }
+            //     return Array.isArray(item) && item.length > 0;
+            // },
+            checkIfInFavorites(): boolean {               
+                if (!this.checkLocalStorageKeyExists(this.favoritesStorageName)) { 
                     return false;
                 }
+                
+                const favoritesLocalStorage = localStorage.getItem(this.favoritesStorageName);    
+
+                const locationName = this.cityName;
+                const storedFavoritesArr: Array<{
+                    location: String,
+                    locationName: String, 
+                    id: String
+                }> = JSON.parse(favoritesLocalStorage || '{}');
+
+                return storedFavoritesArr.some(el => el.locationName === locationName);
+            },
+            checkLocalStorageKeyExists(key: string): boolean {
+             return !!localStorage.getItem(key);
+            },
+            createLocalStorage(storage: string): void {
+             const itemsArr: Array<any> = [];
+             localStorage.setItem(storage, JSON.stringify(itemsArr));
             },
             storeLocationInFavoriteCities(): void {
                 const locationName = this.cityName;
                 const storageName = this.favoritesStorageName;
 
-                if (localStorage.getItem(storageName) === null) {
-                    const favoriteItemsArr: Array<any> = [];
-                    localStorage.setItem(storageName, JSON.stringify(favoriteItemsArr));
+                if (!this.checkLocalStorageKeyExists(storageName)) {
+                   this.createLocalStorage(storageName); 
                 }
 
                 let favoriteItem = {
@@ -131,69 +146,67 @@
                 }
 
                 const storedFavorites: Array<{
-                     location: String,
-                     locationName: String, 
-                     id: String
+                    location: String,
+                    locationName: String, 
+                    id: String
                     }> = JSON.parse(localStorage.getItem(storageName) || '{}');
 
-                if (storedFavorites && storedFavorites.length > 0) {
-                    const index: number = storedFavorites.findIndex(item => item.locationName === locationName);
-                    if (index === -1) {
-                        storedFavorites.push(favoriteItem);
-                        localStorage.setItem(storageName, JSON.stringify(storedFavorites));
-                        this.isInFavorites = true;
-                    }
-                } else {
+                const isInLocalStorage = storedFavorites.some(item => {
+                  return item.locationName === locationName;
+                });
+
+                if (!isInLocalStorage) {
                     storedFavorites.push(favoriteItem);
                     localStorage.setItem(storageName, JSON.stringify(storedFavorites));
                     this.isInFavorites = true;
                 }
             },
             removeLocationFromFavoriteCities(): void {
-                if (localStorage.getItem(this.favoritesStorageName) !== null) {
-                    const locationName = this.cityName ? this.cityName : this.defaultLocationCity;
-                    const storageName = this.favoritesStorageName;
-
-                    const storedFavorites: Array<{
-                         location: String,
-                         locationName: String, 
-                         id: String
-                        }> = JSON.parse(localStorage.getItem(storageName) || '{}');
-
-                    if (storedFavorites && storedFavorites.length > 0) {
-                        const index = storedFavorites.findIndex((item) => item.locationName === locationName);
-                        if (index !== -1) {
-                            const filteredFavorites = storedFavorites.filter(item => item.locationName !== locationName);
-                            localStorage.setItem(storageName, JSON.stringify(filteredFavorites));
-                            this.isInFavorites = false;
-                        }
-                    }
+                if (!this.checkLocalStorageKeyExists(this.favoritesStorageName)) {
+                    return;
                 }
+                const locationName = this.cityName;
+                const storageName = this.favoritesStorageName;
+
+                const storedFavorites: Array<{
+                    location: String,
+                    locationName: String, 
+                    id: String
+                }> = JSON.parse(localStorage.getItem(storageName) || '{}');
+           
+                const isInLocalStorage = storedFavorites.some(item => item.locationName === locationName);
+
+                if (isInLocalStorage) {
+                    const filteredFavorites = storedFavorites.filter(item => item.locationName !== locationName);
+                    localStorage.setItem(storageName, JSON.stringify(filteredFavorites));
+                    this.isInFavorites = false;
+                }                 
             },
-            getLocationFromLocalStorage(locationCity: string): string {
+            getLocationApiFromLocalStorage(locationCity: string): string {
+                if (!this.checkLocalStorageKeyExists(this.locationsStorageName)) {
+                    return '';
+                }
+                    
+                const storedLocations: Array<{ 
+                    location: string, 
+                    locationApi: string 
+                }> = JSON.parse(localStorage.getItem(this.locationsStorageName) || '{}');
+                                    
+                const itemLocationAPI = storedLocations.find(el => {
+                    return el.location.toLowerCase() === locationCity.toLowerCase();
+                });
+                
                 let locationApi = '';
-                if (localStorage.getItem(this.locationsStorageName) !== null) {
-                    
-                    const storedLocations: Array<{ 
-                        location: string, 
-                        locationApi: string 
-                    }> = JSON.parse(localStorage.getItem(this.locationsStorageName) || '{}');
-                    
-                    if (storedLocations.length > 0) {                       
-                        storedLocations.some((el) => {
-                            if (el.location && el.location.toLowerCase() === locationCity.toLowerCase()) {
-                                locationApi = el.locationApi;
-                                this.cityName = el.location;
-                            }                             
-                        });
-                    }
-                } 
+                if (itemLocationAPI !== undefined) {
+                    locationApi = itemLocationAPI.locationApi;
+                    this.cityName = itemLocationAPI.location;
+                    return locationApi;
+                }     
                 return locationApi;
             },
             storeLocationInLocalStorage(city: string, locationApi: string): void {
-                if (localStorage.getItem(this.locationsStorageName) === null) {
-                    let locationItemsArr: Array<any> = [];
-                    localStorage.setItem(this.locationsStorageName, JSON.stringify(locationItemsArr));
+                if (!this.checkLocalStorageKeyExists(this.locationsStorageName)) {
+                    this.createLocalStorage(this.locationsStorageName);
                 }
 
                 let locationItem = {
@@ -202,40 +215,36 @@
                 }
 
                 const storedLocations: Array<{
-                        location: String, 
-                        locationApi: String
+                    location: String, 
+                    locationApi: String
                 }> = JSON.parse(localStorage.getItem(this.locationsStorageName) || '{}');
 
-                if (storedLocations && storedLocations.length > 0) {
-                    const index = storedLocations.findIndex(item => item.locationApi === locationApi);
-                    if (index === -1) {
-                        storedLocations.push(locationItem);
-                        localStorage.setItem(this.locationsStorageName, JSON.stringify(storedLocations));
-                    }
-                } else {
+                const isInLocalStorage = storedLocations.some(item => item.locationApi === locationApi);
+
+                if (!isInLocalStorage) {
                     storedLocations.push(locationItem);
                     localStorage.setItem(this.locationsStorageName, JSON.stringify(storedLocations));
-                }
+                }       
             },
-            async loadWeather(locationApi): Promise<void> {
+            async loadWeather(locationApi: string): Promise<void> {
                 try {
                     await this.$store.dispatch('weather/loadWeather', {
                      api: locationApi,
                      keyApi: this.APIkey
                     });
                 } catch (err){
-                    this.errorMessage = err.message + ' - Please try later';
+                    this.errorMessage = `${err.message} - Please try later`;
                 }
                 this.isLoading = false;
             },
-            async loadForeCast(locationApi): Promise<void> {
+            async loadForeCast(locationApi: string): Promise<void> {
                 try {
                     await this.$store.dispatch('weather/loadForeCast', {
                      api: locationApi,
                      keyApi: this.APIkey
                     });
                 } catch(err) {
-                    this.errorMessage = err.message + ' - Please try later';
+                    this.errorMessage = `${err.message} - Please try later`;
                 }
             },
             async fetchWeather(): Promise<void> {
@@ -243,45 +252,46 @@
                 let locationApi = '';
                 this.errorMessage = '';
 
-                if (locationCity.trim().length < 1 || locationCity.toLowerCase() === (this.defaultLocationCity)
-                    .toLowerCase()) {
-                    this.errorMessage = 'The field is empty or contains incorrect characters';
-                    return;
+                if (!locationCity.trim().length || 
+                    locationCity.toLowerCase() === (this.defaultLocationCity).toLowerCase()) {
+                     this.errorMessage = 'The field is empty or contains incorrect characters';
+                     return;
                 }
 
                 //Check if locationAPI is stored in 'localStorage' by city name.
-                locationApi = this.getLocationFromLocalStorage(locationCity);          
+                locationApi = this.getLocationApiFromLocalStorage(locationCity);          
                
                 if (locationApi) {
-                    this.currentLocationAPI = locationApi;
-                    this.isInFavorites = this.checkIfInFavorites();
-                    
                     this.loadWeather(locationApi);
                     this.loadForeCast(locationApi);
-                } else {
-                    try {
-                        await this.$store.dispatch('weather/loadLocationInfo', {
-                         location: locationCity,
-                         keyApi: this.APIkey
-                        });                                         
-                        const locationInfo = this.locationInfo;
-                        locationApi = locationInfo.Key;                               
-                                        
-                        this.currentLocationAPI = locationApi;
-                        this.cityName = locationInfo.LocalizedName;
-                        this.isInFavorites = this.checkIfInFavorites();
 
-                        this.loadWeather(locationApi);
-                        this.loadForeCast(locationApi);
+                    this.currentLocationAPI = locationApi;
+                    this.isInFavorites = this.checkIfInFavorites();
+                    return;
+                }
+                    
+                try {
+                    await this.$store.dispatch('weather/loadLocationInfo', {
+                        location: locationCity,
+                        keyApi: this.APIkey
+                    });                                         
+                    const locationInfo = this.locationInfo;
+                    locationApi = locationInfo.Key;                               
+                                    
+                    this.loadWeather(locationApi);
+                    this.loadForeCast(locationApi);
 
-                        //Save location info in localstorage
-                        if (locationInfo.LocalizedName && locationInfo.Key) {
-                            this.storeLocationInLocalStorage(locationInfo.LocalizedName, locationInfo.Key);
-                        }
-                    } catch(err) {
-                        this.errorMessage = err.message + ' - Please try later';
+                    this.currentLocationAPI = locationApi;
+                    this.cityName = locationInfo.LocalizedName;
+                    this.isInFavorites = this.checkIfInFavorites();
+
+                    //Save location info in localstorage
+                    if (locationInfo.LocalizedName && locationInfo.Key) {
+                        this.storeLocationInLocalStorage(locationInfo.LocalizedName, locationInfo.Key);
                     }
-                } 
+                } catch(err) {
+                    this.errorMessage = err.message + ' - Please try later';
+                }
             },
             requestPosition(): Promise<object> {
                 const options = {
@@ -304,8 +314,6 @@
                 }
                 try {
                     const position: any = await this.requestPosition();
-                    console.log(position);
-
                     const coordsObj: { latitude: number, longitude: number } = { 
                      latitude:  position.coords.latitude,
                      longitude: position.coords.longitude
@@ -332,12 +340,12 @@
                     }
             },
             initWeatherData(): void {
-                let locationId: any = this.defaultLocationAPI;
-                let locationName: any = this.defaultLocationCity;
+                let locationId = this.defaultLocationAPI;
+                let locationName = this.defaultLocationCity;
 
                 if (this.$route.query.locationId && this.$route.query.locationName) {
-                    locationId = this.$route.query.locationId;
-                    locationName = this.$route.query.locationName;
+                    locationId = (this.$route.query.locationId).toString();
+                    locationName = (this.$route.query.locationName).toString();
                 }
                 this.loadWeather(locationId); 
                 this.loadForeCast(locationId);
@@ -349,27 +357,35 @@
             isSupportGeolocation(): boolean {
              return "geolocation" in window.navigator;
             },
-            toggleUnits(): void {
-                if (this.TemperatureUnit !== "Imperial") {
-                 this.TemperatureUnit = "Imperial";
-                } else {
-                 this.TemperatureUnit = "Metric";
-                }
+            toggleTemperatureFormant(): void {
+               this.TemperatureFormat = (this.TemperatureFormat !== "Metric") ? "Metric" : "Imperial";              
             },   
         },
         computed: {
             getWeather(): object {
-                const weather: any = this.$store.getters['weather/getWeather'];
-                let iconNumber = weather.WeatherIcon;
-                if (iconNumber < 10) {
-                    iconNumber = '0' + iconNumber;
+                const weatherOriginal: any = this.$store.getters['weather/getWeather'];
+                type Weather = {
+                    icon: String, 
+                    cityName: String, 
+                    amount: Number,
+                    unit: String,
+                    weatherText: String
+                };
+                const weatherNew = {} as Weather;
+
+                let iconNumber = (weatherOriginal.WeatherIcon < 10) 
+                 ? `0${weatherOriginal.WeatherIcon}` 
+                 : weatherOriginal.WeatherIcon;
+
+                if (Object.keys(weatherOriginal).length) {
+                    weatherNew.icon = `https://developer.accuweather.com/sites/default/files/${iconNumber}-s.png`;
+                    weatherNew.cityName = this.cityName;
+                    weatherNew.amount = weatherOriginal.Temperature[this.TemperatureFormat].Value;
+                    weatherNew.unit = this.TemperatureFormat === "Metric" ? '℃' : '℉';
+                    weatherNew.weatherText = weatherOriginal.WeatherText;
                 }
-                const iconUrl = `https://developer.accuweather.com/sites/default/files/${iconNumber}-s.png`;
 
-                weather.cityName = this.cityName;
-                weather.icon = iconUrl;
-
-                return weather;
+                return weatherNew;
             },
             locationInfo(): any {
                 return this.$store.getters['weather/getLocationInfo'];
@@ -378,15 +394,17 @@
                 return this.$store.getters['weather/getDefaultLocationInfo'];
             },
             fetchForeCast(): object {
-                const forecastObj: object = this.$store.getters['weather/getForeCast'];
-                return forecastObj;
+                return this.$store.getters['weather/getForeCast'];
             },
             hasWeather(): boolean {
-                return !this.isLoading && this.$store.getters['weather/hasWeather'];
+                return (!this.isLoading) && this.$store.getters['weather/hasWeather'];
             },
             hasForeCast(): boolean {
                 return this.$store.getters['weather/hasForeCast'];
             },
+            showTest(): any[] {
+                return this.testArr;
+            }
         },
         created() {
             this.initWeatherData();
@@ -470,6 +488,7 @@
         border-color: #909399;
         cursor: pointer;
         margin-top: 10px;
+        margin-right: 5px;
         cursor: pointer;
     }
 
